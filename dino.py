@@ -1,5 +1,6 @@
 import os
 import sys
+import random
 import pygame
 
 WIDTH = 623
@@ -114,8 +115,28 @@ class Game:
     def __init__(self):
         self.bg = [BG(x=0), BG(x=WIDTH)]
         self.dino = Dino()
-        self.cactus = Cactus(x=300)
+        self.obstacles = []
         self.speed = 3
+
+    def tospawn(self, loops):
+        return loops % 100 == 0
+
+    def spawn_cactus(self):
+        # list with cactus
+        if len(self.obstacles) > 0:
+            prev_cactus = self.obstacles[-1]
+            # 44 pixels is width of dino
+            # 84 pixels is random value for dino to jump between two cactus without dying
+            x = random.randint(
+                prev_cactus.x + self.dino.width + 100,
+                WIDTH + prev_cactus.x + self.dino.width + 100,
+            )
+        else:
+            x = random.randint(WIDTH + 100, 1000)
+
+        # create new cactus
+        cactus = Cactus(x)
+        self.obstacles.append(cactus)
 
 
 def main():
@@ -140,8 +161,12 @@ def main():
         dino.show()
 
         # Code to display Cactus
-        game.cactus.update(-game.speed)
-        game.cactus.show()
+        if game.tospawn(loops):
+            game.spawn_cactus()
+
+        for cactus in game.obstacles:
+            cactus.update(-game.speed)
+            cactus.show()
 
         for event in pygame.event.get():
             # end the game on clicking quit button
