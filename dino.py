@@ -118,12 +118,35 @@ class Collision:
         return distance < 35
 
 
+class Score:
+    def __init__(self, hs):
+        self.hs = hs
+        self.act = 0
+        self.font = pygame.font.SysFont("monospace", 20)
+        self.color = (0, 0, 0)
+        self.show()
+
+    def update(self, loops):
+        self.act = loops // 10
+        self.check_hs()
+
+    def show(self):
+        self.lbl = self.font.render(f"HI {self.hs} {self.act}", 1, self.color)
+        lbl_width = self.lbl.get_rect().width
+        screen.blit(self.lbl, (WIDTH - lbl_width - 10, 10))
+
+    def check_hs(self):
+        if self.act >= self.hs:
+            self.hs = self.act
+
+
 class Game:
     def __init__(self):
         self.bg = [BG(x=0), BG(x=WIDTH)]
         self.dino = Dino()
         self.obstacles = []
         self.collision = Collision()
+        self.score = Score(hs=0)
         self.speed = 3
         self.playing = False
 
@@ -187,6 +210,10 @@ def main():
                 # logic for collisions
                 if game.collision.between(dino, cactus):
                     game.over()
+
+            # score
+            game.score.update(loops)
+            game.score.show()
 
         for event in pygame.event.get():
             # end the game on clicking quit button
