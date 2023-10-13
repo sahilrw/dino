@@ -250,7 +250,10 @@ def main():
 
                 # logic for collisions
                 if game.collision.between(dino, cactus):
-                    game.over()
+                    over = True
+
+            if over:
+                game.over()
 
             # score
             game.score.update(loops)
