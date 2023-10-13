@@ -8,6 +8,7 @@ WIDTH = 623
 HEIGHT = 150
 
 pygame.init()
+pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Dino Game")
 
@@ -50,6 +51,7 @@ class Dino:
         self.falling = False
         self.fall_stop = self.y
         self.set_texture()
+        self.set_sound()
         self.show()
 
     def update(self, loops):
@@ -78,7 +80,12 @@ class Dino:
         self.texture = pygame.image.load(path)
         self.texture = pygame.transform.scale(self.texture, (self.width, self.height))
 
+    def set_sound(self):
+        path = os.path.join("assets/sounds/jump.wav")
+        self.sound = pygame.mixer.Sound(path)
+
     def jump(self):
+        self.sound.play()
         self.jumping = True
         self.onground = False
 
@@ -124,35 +131,44 @@ class Score:
         self.act = 0
         self.font = pygame.font.SysFont("monospace", 20)
         self.color = (0, 0, 0)
+        self.set_sound()
         self.show()
 
     def update(self, loops):
         self.act = loops // 10
         self.check_hs()
+        self.check_sound()
 
     def show(self):
         self.lbl = self.font.render(f"HI {self.hs} {self.act}", 1, self.color)
         lbl_width = self.lbl.get_rect().width
         screen.blit(self.lbl, (WIDTH - lbl_width - 10, 10))
 
+    def set_sound(self):
+        path = os.path.join("assets/sounds/point.wav")
+        self.sound = pygame.mixer.Sound(path)
+
     def check_hs(self):
         if self.act >= self.hs:
             self.hs = self.act
 
-    def reset(self):
-        self.act = 0
+    def check_sound(self):
+        if self.act % 100 == 0 and self.act != 0:
+            self.sound.play()
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, hs=0):
         self.bg = [BG(x=0), BG(x=WIDTH)]
         self.dino = Dino()
         self.obstacles = []
         self.collision = Collision()
-        self.score = Score(hs=0)
+        self.score = Score(hs)
         self.speed = 3
         self.playing = False
+        self.set_sound()
         self.set_labels()
+        self.spawn_cactus()
 
     def set_labels(self):
         big_font = pygame.font.SysFont("monospace", 26, bold=True)
@@ -160,10 +176,15 @@ class Game:
         self.big_lbl = big_font.render(f"G A M E O V E R", 1, (0, 0, 0))
         self.small_lbl = small_font.render(f"Press Enter to Restart", 1, (0, 0, 0))
 
+    def set_sound(self):
+        path = os.path.join("assets/sounds/die.wav")
+        self.sound = pygame.mixer.Sound(path)
+
     def start(self):
         self.playing = True
 
     def over(self):
+        self.sound.play()
         screen.blit(
             self.big_lbl, (WIDTH // 2 - self.big_lbl.get_width() // 2, HEIGHT // 4)
         )
@@ -194,7 +215,7 @@ class Game:
         self.obstacles.append(cactus)
 
     def restart(self):
-        self.__init__()
+        self.__init__(hs=self.score.hs)
 
 
 def main():
@@ -203,8 +224,8 @@ def main():
     dino = game.dino
 
     clock = pygame.time.Clock()
-
     loops = 0
+    over = False
 
     while True:
         if game.playing:
@@ -242,16 +263,18 @@ def main():
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    if dino.onground:
-                        dino.jump()
+                    if not over:
+                        if dino.onground:
+                            dino.jump()
 
-                    if not game.playing:
-                        game.start()
+                        if not game.playing:
+                            game.start()
 
                 if event.key == pygame.K_RETURN:
                     game.restart()
                     dino = game.dino
                     loops = 0
+                    over = False
 
         clock.tick(120)
         pygame.display.update()
